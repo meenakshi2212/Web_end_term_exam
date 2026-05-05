@@ -1,0 +1,87 @@
+-- Users
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(80) UNIQUE NOT NULL,
+  email VARCHAR(120) UNIQUE NOT NULL,
+  display_name VARCHAR(120) NOT NULL,
+  avatar_url VARCHAR(255),
+  password_hash VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Notes
+CREATE TABLE IF NOT EXISTS notes (
+  id SERIAL PRIMARY KEY,
+  owner_id INT NOT NULL REFERENCES users(id),
+  title VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
+  favorite BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Tags
+CREATE TABLE IF NOT EXISTS tags (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(80) UNIQUE NOT NULL
+);
+
+-- Note Tags
+CREATE TABLE IF NOT EXISTS note_tags (
+  note_id INT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+  tag_id INT NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+  PRIMARY KEY (note_id, tag_id)
+);
+
+-- Groups
+CREATE TABLE IF NOT EXISTS groups (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  owner_id INT NOT NULL REFERENCES users(id),
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS group_members (
+  group_id INT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role VARCHAR(20) NOT NULL DEFAULT 'VIEWER',
+  PRIMARY KEY (group_id, user_id)
+);
+
+-- Shared Notes
+CREATE TABLE IF NOT EXISTS shared_notes (
+  id SERIAL PRIMARY KEY,
+  note_id INT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+  target_user_id INT REFERENCES users(id),
+  target_group_id INT REFERENCES groups(id),
+  permission VARCHAR(20) NOT NULL DEFAULT 'EDITOR',
+  shared_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Comments
+CREATE TABLE IF NOT EXISTS comments (
+  id SERIAL PRIMARY KEY,
+  note_id INT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+  author_id INT NOT NULL REFERENCES users(id),
+  text TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Version History
+CREATE TABLE IF NOT EXISTS version_history (
+  id SERIAL PRIMARY KEY,
+  note_id INT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
+  version_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  editor_id INT REFERENCES users(id)
+);
+
+-- Notifications
+CREATE TABLE IF NOT EXISTS notifications (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id),
+  message VARCHAR(255) NOT NULL,
+  seen BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
